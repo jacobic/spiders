@@ -1,4 +1,3 @@
-
 import os
 import dill as pickle
 import fnmatch
@@ -7,10 +6,8 @@ import pandas as pd
 import numpy as np
 from astropy.table import Table
 
-import src.globals as glo
 
-
-def load_fits(N_Rvir=10.0, directory=glo.DIR_INTERIM):
+def load_fits(directory, N_Rvir=10.0):
     """
 
     :return:
@@ -28,7 +25,7 @@ def load_fits(N_Rvir=10.0, directory=glo.DIR_INTERIM):
     return df
 
 
-def load_pkl(N_Rvir=10.0, directory=glo.DIR_INTERIM):
+def load_pkl(directory, N_Rvir=10.0):
     """
 
     :param N_Rvir:
@@ -160,6 +157,7 @@ def fits_pandas(directory,
 
     return df
 
+
 #TODO: also include multi cols fnctionality (currently in make-row!)
 def pandas_fits(df, drop=None):
     """
@@ -188,6 +186,7 @@ def pandas_fits(df, drop=None):
         df[col] = str_df[col].apply(lambda x: x.encode('utf-8'))
 
     return Table.from_pandas(df.copy())
+
 
 def fits_pkl(directory, name, **kwargs):
     """ Load / pickle data with fits_pandas for speedy loading.
