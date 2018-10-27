@@ -3,22 +3,6 @@ import astropy.wcs as wcs
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-def dist_great_circle(ra1, dec1, ra2=None, dec2=None):
-    """ Computes rigorous great circle arc distances an returns the value in
-    arcsecs.
-
-    This function is based on the GCIRC IDL function.
-    https://idlastro.gsfc.nasa.gov/ftp/pro/astro/gcirc.pro.
-
-    """
-    # Ensure that when only one catalog (set of ra and dec lists) is given
-    # that the catalog is matched with itself.
-    if ra2 is None and dec2 is None:
-        ra2, dec2 = ra1, dec1
-    sky1 = SkyCoord(ra=ra1.deg, dec=dec1.deg, unit='deg')
-    sky2 = SkyCoord(ra=ra2.deg, dec=dec2.deg, unit='deg')
-    return sky1.separation(sky2).to(u.arcsec)
-
 
 def dist_circle(nx, ny, x_cen, y_cen):
     """
@@ -44,11 +28,11 @@ def dist_circle(nx, ny, x_cen, y_cen):
     x, y = np.meshgrid(x, y)
     x, y = x.transpose(), y.transpose()
     x_cen, y_cen = y_cen, x_cen  # transpose centers well
-    mask = np.sqrt((x - x_cen)**2 + (y - y_cen)**2)
+    mask = np.sqrt((x - x_cen) ** 2 + (y - y_cen) ** 2)
     return mask
 
 
-def wcs_pixel_info(ra, dec):
+def wcs_pixel_info(sky):
     """
     Construct a World Coordinate System (WCS) object and return relevant pixel
     information for creating a fits image from the (ra,dec) positions of
@@ -65,8 +49,7 @@ def wcs_pixel_info(ra, dec):
 
     Parameters
     ----------
-        ra :
-        dec :
+    sky : SkyCoord
 
     Returns
     ----------
@@ -79,11 +62,13 @@ def wcs_pixel_info(ra, dec):
 
     """
     # Get rough ima get dimensions
-    # TODO: change to get rid of dependancy of dist_great_Circle
-    dim_ra = dist_great_circle(
-        np.nanmin(ra), np.median(dec), np.nanmax(ra), np.median(dec))
-    dim_dec = dist_great_circle(
-        np.median(ra), np.nanmin(dec), np.median(ra), np.nanmax(dec))
+    ra, dec = sky.ra, sky.dec
+    s1 = SkyCoord(np.nanmin(ra), np.median(dec))
+    s2 = SkyCoord(np.nanmax(ra), np.median(dec))
+    s3 = SkyCoord(np.median(ra), np.nanmin(dec))
+    s4 = SkyCoord(np.median(ra), np.nanmax(dec))
+    dim_ra = s1.separation(s2).to(u.arcmin)
+    dim_dec = s3.separation(s4).to(u.arcmin)
 
     # Number of pixels.
     n_ra_pix = dim_ra.arcsec / 2
@@ -185,7 +170,7 @@ def create_circular_mask(shape, center=None, radius=None):
         radius = min(center[0], center[1], w - center[0], h - center[1])
 
     y, x = np.ogrid[:h, :w]
-    dist_from_center = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+    dist_from_center = np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
 
     mask = dist_from_center <= radius
     return mask
@@ -216,6 +201,14 @@ def circle_skyregions_mask(regions, wcs, shape):
 
 
 def regions2compound(region_list):
+    """
+    Convert list of regions to a single compound region.
+
+    Example
+    -------
+    Lists of regions are useful for area calculations but compund regions are
+    way more useful for checking which sources lie within the regions.
+    """
 
     for i, r in enumerate(region_list):
         if i == 0:
