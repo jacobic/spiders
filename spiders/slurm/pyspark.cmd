@@ -12,7 +12,7 @@
 
 # Run in the following way:
 # sbatch -a 1-1%1 -p <partition> -N <nodes> -t <timelimit> \
-# pyspark.cmd "path/to/<script>.py args -foo -bar"
+# pyspark.cmd <conda env> "path/to/<script>.py args -foo -bar"
 
 export PROJECT="$(pwd)" && echo "PROJECT=$PROJECT"
 
@@ -29,7 +29,7 @@ echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
 #TODO: Note this requires exporting conda's bin dir in ~/.bashrc
 # Load conda env
-source activate ps1
+PROJECT_ENV="$1" && echo "PROJECT_ENV $PROJECT_ENV" && source activate $PROJECT_ENV
 
 # Append PYTHONPATH in order to find all modules in the project directory.
 export PYTHONPATH="${PYTHONPATH}:$PROJECT" && export PYTHONUNBUFFERED=1
@@ -42,7 +42,7 @@ export PYTHONSEED=0 && export PYTHONHASHSEED=0
 export SPARK_LOCAL_DIRS=/ptmp/jacobic
 
 # Ensure you have executable permissions on the program.
-ARGS="$1" && echo "ARGS $ARGS" && SCRIPT=$(echo $ARGS | awk '{print $1;}')
+ARGS="$2" && echo "ARGS $ARGS" && SCRIPT=$(echo $ARGS | awk '{print $1;}')
 echo "SCRIPT $SCRIPT" && chmod u+x $SCRIPT
 
 # These are not accessible as master node is not directly accessible by ssh.
