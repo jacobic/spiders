@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""Console script for ClusterTools."""
+"""Console script for spiders."""
 import sys
 import click
 
 
 @click.command()
 def main(args=None):
-    """Console script for ClusterTools."""
+    """Console script for spiders."""
     click.echo("Replace this message by putting your code into "
-               "ClusterTools.cli.main")
+               "spiders.cli.main")
     click.echo("See click documentation at http://click.pocoo.org/")
     return 0
 

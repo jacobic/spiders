@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use ClusterTools in a project::
+To use spiders in a project::
 
-    import ClusterTools
+    import spiders

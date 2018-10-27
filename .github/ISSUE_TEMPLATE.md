@@ -1,4 +1,4 @@
-* ClusterTools version:
+* spiders version:
 * Python version:
 * Operating System:
 

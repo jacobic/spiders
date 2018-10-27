@@ -25,5 +25,5 @@ deploy:
     secure: PLEASE_REPLACE_ME
   on:
     tags: true
-    repo: jacobic/ClusterTools
+    repo: jacobic/spiders
     python: 3.6

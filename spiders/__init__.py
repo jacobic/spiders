@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Top-level package for ClusterTools."""
+"""Top-level package for spiders."""
 
 __author__ = """Jacob Ider Chitham"""
 __email__ = 'jacobic@mpe.mpg.de'

@@ -215,7 +215,7 @@ def circle_skyregions_mask(regions, wcs, shape):
     return final_mask
 
 
-def region_list_to_compound(region_list):
+def regions2compound(region_list):
 
     for i, r in enumerate(region_list):
         if i == 0:

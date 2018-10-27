@@ -1,4 +1,4 @@
-Welcome to ClusterTools's documentation!
+Welcome to spiders's documentation!
 ======================================
 
 .. toctree::
