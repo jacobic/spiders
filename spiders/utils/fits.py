@@ -181,9 +181,11 @@ def pandas_fits(df, drop=None):
     for col in bool_df:
         df[col] = bool_df[col].astype(np.int16)
 
-    str_df = df.select_dtypes('O')
-    for col in str_df:
-        df[col] = str_df[col].apply(lambda x: x.encode('utf-8'))
+    object_df = df.select_dtypes('O')
+    for col in object_df:
+        #TODO: optimise this logic to automatically remove other objects.
+        if all(df[col].apply(type) == str):
+            df.loc[:, col] = object_df.loc[:, col].apply(lambda x: x.encode('utf-8'))
 
     return Table.from_pandas(df.copy())
 
