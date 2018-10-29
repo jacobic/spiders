@@ -1,7 +1,23 @@
 import numpy as np
+import pandas as pd
 import astropy.wcs as wcs
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+
+
+@pd.api.extensions.register_dataframe_accessor("_")
+@pd.api.extensions.register_series_accessor("_")
+class PandasSkyAccessor(object):
+    def __init__(self, pandas_obj):
+        self._obj = pandas_obj
+
+    def sky(self, dict_sky=None, sky_kwargs=None):
+        if not dict_sky:
+            dict_sky = dict(ra='ra', dec='dec')
+        if not sky_kwargs:
+            sky_kwargs = dict(unit='deg', frame='icrs')
+        ra, dec = self._obj[dict_sky['ra']], self._obj[dict_sky['dec']]
+        return SkyCoord(ra=ra, dec=dec, **sky_kwargs)
 
 
 def dist_circle(nx, ny, x_cen, y_cen):
