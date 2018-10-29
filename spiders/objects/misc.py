@@ -1,7 +1,9 @@
 import os
+import shutil
 import pandas as pd
 from dataclasses import dataclass
 from astropy.coordinates import SkyCoord
+import subprocess as sp
 from ..utils.misc import file_size
 
 
@@ -35,6 +37,48 @@ class Str(str):
         """
         return Str(str(self).__getitem__(item))
 
+
+class WrapperBase:
+    """
+    # Similar to https://github.com/megalut/sewpy/blob/master/sewpy/sewpy.py
+    Parameters
+    ----------
+    cmd
+    logbase
+    Returns
+    -------
+    """
+
+    def __init__(self, cmd, logname):
+        self.cmd = list(map(str, cmd))
+        self.exectable = cmd[0]
+        self.logname = logname
+
+    @property
+    def which(self):
+        which = shutil.which(self.exectable)
+        assert which is not None, f"Cannot find {self.exectable}."
+        return which
+
+    def init_log(self):
+        """
+        Log to file directly as sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE)
+        blocks the writer when the OS buffer gets filled and bad things happen.
+        Returns
+        -------
+        """
+        # Write cmd to the log file.
+        with open(self.logname, 'w') as log:
+            log.write(f'which: {self.which}\n')
+            log.write(f'cmd: {" ".join(self.cmd)}\n')
+            log.write('\n\n------- stdout / stderr -------\n')
+
+    def run_cmd(self):
+        self.init_log()
+        # Append output of subprocess to the same log file.
+        with open(self.logname, 'a') as log:
+            p = sp.Popen(self.cmd, stdout=log, stderr=log)
+            p.wait()
 
 @dataclass
 class FileBase:
