@@ -72,7 +72,7 @@ EXECUTOR_MEMORY=$(echo "(($SLURM_JOB_NUM_NODES * $SLURM_MEM_PER_NODE) - $DRIVER_
 
 # Spark job submission.
 SUBMIT="spark-submit --total-executor-cores $TOTAL_EXECUTOR_CORES \
---executor-memory ${EXECUTOR_MEMORY}m  --driver-memory ${DRIVER_MEMORY}m $ARGS"
+--executor-memory ${EXECUTOR_MEMORY}m --driver-memory ${DRIVER_MEMORY}m $ARGS"
 
 rm "$PROJECT/pyspark.log" && touch "$PROJECT/pyspark.log"
 echo "$SUBMIT" && eval $SUBMIT
