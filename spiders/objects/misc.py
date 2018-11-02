@@ -92,12 +92,16 @@ class FileBase:
     subdir: str
     abspath: str
 
-    def __post_init__(self):
-        self.size = file_size(self.abspath, 'MB')
-        self.exists = os.path.isfile(self.abspath)
-
     def _size(self, unit='MB'):
         return file_size(self.abspath, unit)
+
+    @property
+    def size(self):
+        return file_size(self.abspath, 'MB')
+
+    @property
+    def exists(self):
+        return os.path.isfile(self.abspath)
 
 
 @dataclass
