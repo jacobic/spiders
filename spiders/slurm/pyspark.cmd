@@ -18,7 +18,7 @@ export PROJECT="$(pwd)" && echo "PROJECT=$PROJECT"
 
 # Load Draco modules required for spark
 module load jdk
-module load spark
+module load spark/2.3.2
 
 # Load libraries required for Astromatic software
 module load intel/18.0
