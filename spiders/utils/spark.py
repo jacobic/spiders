@@ -50,3 +50,20 @@ def typed_udf(return_type):
 
     return _typed_udf_wrapper
 
+
+def withColumnIndex(df: DataFrame):
+    """
+    Add index to spark DataFrame with column labeled "idx".
+    """
+    # Create new column names
+    cols = df.schema.names
+    _cols = cols + ['idx']
+
+    # Add Column index
+    def add_idx(row, idx):
+        return row + (idx,)
+
+    # Zip and rename columns.
+    _df = df.rdd.zipWithIndex().map(lambda x: add_idx(*x)).toDF()
+    columns = dict(zip(_cols, _df.columns))
+    return _df.select([f.col(v).alias(k) for k, v in columns.items()])
