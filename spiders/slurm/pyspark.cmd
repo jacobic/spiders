@@ -37,10 +37,6 @@ export PYTHONPATH="${PYTHONPATH}:$PROJECT" && export PYTHONUNBUFFERED=1
 # Ensure random numbers and hashes are reproducible.
 export PYTHONSEED=0 && export PYTHONHASHSEED=0
 
-# Directory to use for "scratch" space in Spark, including map output files and
-# RDDs that get stored on disk. This should be on a fast, local disk.
-export SPARK_LOCAL_DIRS=/ptmp/jacobic
-
 # Ensure you have executable permissions on the program.
 ARGS="$2" && echo "ARGS $ARGS" && SCRIPT=$(echo $ARGS | awk '{print $1;}')
 echo "SCRIPT $SCRIPT" && chmod u+x $SCRIPT
@@ -73,7 +69,13 @@ EXECUTOR_MEMORY=$(echo "(($SLURM_JOB_NUM_NODES * $SLURM_MEM_PER_NODE) - $DRIVER_
 # Spark job submission.
 SUBMIT="spark-submit --total-executor-cores $TOTAL_EXECUTOR_CORES \
 --executor-memory ${EXECUTOR_MEMORY}m --driver-memory ${DRIVER_MEMORY}m \
---packages com.github.astrolabsoftware:spark-fits_2.11:0.7.1 $ARGS"
+--conf spark.local.dir=/ptmp/jacobic \
+--conf spark.eventLog.dir=file:///ptmp/jacobic/spark-events \
+--conf spark.eventLog.enabled=true \
+--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+--packages com.github.astrolabsoftware:spark-fits_2.11:0.7.1,databricks:spark-deep-learning:1.2.0-spark2.3-s_2.11 \
+--jars '/draco/u/jacobic/.local/spark-fits/target/scala-2.11/spark-fits_2.11-0.7.1.jar' \
+$ARGS"
 
 rm "$PROJECT/pyspark.log" && touch "$PROJECT/pyspark.log"
 echo "$SUBMIT" && eval $SUBMIT
