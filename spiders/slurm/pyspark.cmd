@@ -66,12 +66,17 @@ TOTAL_EXECUTOR_CORES=$(echo "$SLURM_JOB_NUM_NODES * $SLURM_NTASKS_PER_NODE * $SL
 DRIVER_MEMORY=20000
 EXECUTOR_MEMORY=$(echo "(($SLURM_JOB_NUM_NODES * $SLURM_MEM_PER_NODE) - $DRIVER_MEMORY) / $TOTAL_EXECUTOR_CORES" | bc)
 
+# /tmp is usually used but this can get full and cause things to crash, using /ptmp is recommended by the MPCDF for all scratch dat.
+SPARK_DRACO_PTMP=/ptmp/jacobic
+
 # Spark job submission.
 SUBMIT="spark-submit --total-executor-cores $TOTAL_EXECUTOR_CORES \
 --executor-memory ${EXECUTOR_MEMORY}m --driver-memory ${DRIVER_MEMORY}m \
---conf spark.local.dir=/ptmp/jacobic \
---conf spark.eventLog.dir=file:///ptmp/jacobic/spark-events \
+--conf spark.local.dir=${SPARK_DRACO_PTMP} \
+--conf spark.eventLog.dir=file://${SPARK_DRACO_PTMP}/spark-events \
 --conf spark.eventLog.enabled=true \
+--conf spark.executor.extraJavaOptions=-Djava.io.tmpdir=${SPARK_DRACO_PTMP} \
+--conf spark.driver.extraJavaOptions=-Djava.io.tmpdir=${SPARK_DRACO_PTMP} \
 --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
 --packages com.github.astrolabsoftware:spark-fits_2.11:0.7.1,databricks:spark-deep-learning:1.2.0-spark2.3-s_2.11 \
 --jars '/draco/u/jacobic/.local/spark-fits/target/scala-2.11/spark-fits_2.11-0.7.1.jar' \
