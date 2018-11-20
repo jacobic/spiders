@@ -114,7 +114,6 @@ class GalacticEquatorial(SQLTransformer):
         delta_g = 27.12825
         l_ncp = 122.93192
 
-
         statement = f""" SELECT *, 
         acos( (sin({self.bCol}) * cos({delta_g}) 
                 - cos({self.bCol}) * sin({delta_g}) * sin({self.lCol} 
@@ -128,9 +127,9 @@ class GalacticEquatorial(SQLTransformer):
         (sin({self.bCol}) * sin({delta_g})) + cos({self.bCol})*cos({
         delta_g})*sin({self.lCol} - {l_ncp})
        
-       ) AS ({self.decCol}
+       ) AS {self.decCol}
        
        FROM __THIS__
        )
        """
-        super.__init__(statement=statement)
+        super().__init__(statement=statement)
