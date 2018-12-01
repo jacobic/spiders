@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 from functools import reduce
 
+import astropy.units as u
+from astropy import constants
+from astropy.io.ascii import FloatType
 from pyspark.ml import Transformer
 from pyspark.ml.feature import SQLTransformer
 from pyspark.sql import DataFrame
@@ -47,28 +50,31 @@ def typed_udf(return_type):
         function: Typed UDF decorator
 
     """
+
     def _typed_udf_wrapper(func):
         return f.udf(func, return_type)
 
     return _typed_udf_wrapper
 
 
-def withColumnIndex(df: DataFrame):
-    """
-    Add index to spark DataFrame with column labeled "idx".
-    """
-    # Create new column names
-    cols = df.schema.names
-    _cols = cols + ['idx']
+class ColumnIndexer(Transformer):
 
-    # Add Column index
-    def add_idx(row, idx):
-        return row + (idx,)
+    def _transform(self, df: DataFrame) -> DataFrame:
+        """
+        Add index to spark DataFrame with column labeled "idx".
+        """
+        # Create new column names
+        cols = df.schema.names
+        _cols = cols + ['idx']
 
-    # Zip and rename columns.
-    _df = df.rdd.zipWithIndex().map(lambda x: add_idx(*x)).toDF()
-    columns = dict(zip(_cols, _df.columns))
-    return _df.select([f.col(v).alias(k) for k, v in columns.items()])
+        # Add Column index
+        def add_idx(row, idx):
+            return row + (idx,)
+
+        # Zip and rename columns.
+        _df = df.rdd.zipWithIndex().map(lambda x: add_idx(*x)).toDF()
+        columns = dict(zip(_cols, _df.columns))
+        return _df.select([f.col(v).alias(k) for k, v in columns.items()])
 
 
 class GreatCircleDistanceDeg(Transformer):
@@ -133,3 +139,19 @@ class GalacticEquatorial(SQLTransformer):
        )
        """
         super().__init__(statement=statement)
+
+
+class ProperVelocity(Transformer):
+
+    def __init__(self, zgalCol, zclusCol, outputCol, outUnit='km/s'):
+        self.zgalCol = zgalCol
+        self.zclusCol = zclusCol
+        self.outputCol = outputCol
+        self.outUnit = outUnit
+
+    def _transform(self, df) -> DataFrame:
+        z, z_clus = self.zgalCol, self.zclusCol
+        c = constants.c.to(u.Unit(self.outUnit)).value
+        expression = f'{c} * ({z} - {z_clus}) / (1 + {z_clus})'
+        df = df.withColumn(self.outputCol, f.expr(expression))
+        return df
