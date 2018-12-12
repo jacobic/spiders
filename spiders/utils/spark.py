@@ -1,15 +1,28 @@
+import os
 import numpy as np
 import pandas as pd
+import statistics
 from functools import reduce
 
 import astropy.units as u
 from astropy import constants
-from astropy.io.ascii import FloatType
 from pyspark.ml import Transformer
 from pyspark.ml.feature import SQLTransformer
 from pyspark.sql import DataFrame
 import pyspark.sql.functions as f
 from typing import Union, List
+from pyspark.sql.types import FloatType
+
+
+def slurm_app(prefix):
+    try:
+        job_name = f'_{os.environ["SLURM_JOB_ID"]}'
+    except KeyError as e:
+        try:
+            job_name = f'_{os.environ["SLURM_ARRAY_JOB_ID"]}'
+        except KeyError as e:
+            job_name = ''
+    return f'{prefix}{job_name}'
 
 
 def buckets(x: object, attr: str, bins: np.ndarray) -> str:
@@ -57,7 +70,26 @@ def typed_udf(return_type):
     return _typed_udf_wrapper
 
 
+@typed_udf(FloatType())
+def udf_median(items: List[float]):
+    """
+    Median of elements in a list
+    """
+    return statistics.median(items)
+
+
+@typed_udf(FloatType())
+def udf_cumprod(items: List[float]):
+    """
+    Cumulative product of elements in a list
+    """
+    return reduce(lambda x, y: x * y, items)
+
+
 class ColumnIndexer(Transformer):
+
+    def __init__(self, IndexCol: str = 'idx'):
+        self.IndexCol = IndexCol
 
     def _transform(self, df: DataFrame) -> DataFrame:
         """
@@ -65,7 +97,7 @@ class ColumnIndexer(Transformer):
         """
         # Create new column names
         cols = df.schema.names
-        _cols = cols + ['idx']
+        _cols = cols + [self.IndexCol]
 
         # Add Column index
         def add_idx(row, idx):
