@@ -70,6 +70,11 @@ def typed_udf(return_type):
     return _typed_udf_wrapper
 
 
+@f.pandas_udf(FloatType(), f.PandasUDFType.SCALAR)
+def round_partial(value, resolution):
+    return pd.Series(np.around(value / resolution) * resolution)
+
+
 @typed_udf(FloatType())
 def udf_median(items: List[float]):
     """
