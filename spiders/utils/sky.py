@@ -48,6 +48,27 @@ def dist_circle(nx, ny, x_cen, y_cen):
     return mask
 
 
+def sky_comoving_volume(cosmo, z0, z1, area):
+    """
+    Helper function to calculate the volume of a redshift bin over a
+    specified area. Based on https://rdrr.io/cran/celestial/src/R/cosvol.R
+
+    Parameters
+    ----------
+    cosmo : astropy.cosmology.core
+    z0 : float
+        Initial redshift
+    z1: float
+        Final redshift
+    area:
+        #TODO: make this generalisable to any units.
+        Survey area in deg^2
+
+    """
+    _ = np.pi * area * u.deg**2 / np.square(360 * u.deg)
+    return _ * (cosmo.comoving_volume(z1) - cosmo.comoving_volume(z0))
+
+
 def wcs_pixel_info(sky):
     """
     Construct a World Coordinate System (WCS) object and return relevant pixel
