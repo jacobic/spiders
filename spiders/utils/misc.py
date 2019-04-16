@@ -1,4 +1,6 @@
 import os
+
+import emcee
 import pandas as pd
 import numpy as np
 import tqdm
@@ -27,6 +29,40 @@ def assert_arraylike(x):
         x = x.values
     assert isinstance(x, np.ndarray)
     return x
+
+
+def emcee_pandas(sampler: emcee.EnsembleSampler, nburn: int = None,
+                 pars: list = None):
+    """
+    Convert emcee chain to pd.DataFrame
+    Parameters
+    ----------
+    sampler : emcee.EnsembleSampler
+    nburn : int, optional
+        Number of steps to burn in.
+    pars : iterable, optional
+        List of parameters that when indexed returns the label for that
+        parameter. e.g. pars[0] = 'Omega_m'.
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
+    # Convert chain to a pd.DataFrame for easy plotting with sns.
+    df = pd.Panel(sampler.chain) \
+        .to_frame() \
+        .stack() \
+        .reset_index()
+    df.columns = ['step', 'par', 'walker', 'value']
+    if nburn:
+        # Burn the chain.
+        df = df.query(f'step > {nburn}')
+    if pars:
+        # Map par values with keys.
+        df['par'] = df['par'].map(lambda _: pars[_])
+    return df
+
 
 
 def parallelize(func, inputs, n_proc, loglevel=None):
