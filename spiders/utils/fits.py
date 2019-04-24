@@ -91,7 +91,6 @@ def fits_pandas(directory,
                 name,
                 drop_duplicates=False,
                 duplicate_id=None,
-                multi_cols=[],
                 multi_startswith=None,
                 missing=[-99999, -1.0]):
     """
@@ -144,10 +143,11 @@ def fits_pandas(directory,
     else:
         str_df = df.select_dtypes([np.object])
 
-    # Strip whitespace from either side of strings for each string column
-    str_df = str_df.stack().str.decode('utf-8').unstack()
-    for col in str_df:
-        df[col] = str_df[col].str.strip()
+    if not str_df.empty:
+        # Strip whitespace from either side of strings for each string column
+        str_df = str_df.stack().str.decode('utf-8').unstack()
+        for col in str_df:
+            df[col] = str_df[col].str.strip()
 
     # Remove missing data
     all_df = df.loc[:, multi_cols]
