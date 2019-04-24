@@ -3,9 +3,11 @@ import pandas as pd
 import astropy.wcs as wcs
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-import astropy.constants as const
 from astropy.cosmology.core import Cosmology as AstropyCosmology
+from astropy.units import Quantity
 from colossus.cosmology.cosmology import Cosmology as ColossusCosmology
+
+from spiders.objects.misc import HybridFlatLambdaCDM
 
 
 @pd.api.extensions.register_dataframe_accessor("_")
@@ -51,30 +53,10 @@ def dist_circle(nx, ny, x_cen, y_cen):
     return mask
 
 
-def comoving_volume(cosmo: ColossusCosmology,
-                    z: float) -> u.Quantity:
-    """
-    Exact copy of astropy.cosmology.core method comoving_volume() designed
-    for use with Colossus.cosmology.cosmology.Cosmology objects.
-
-    """
-    Ok0 = cosmo.Ok(0)
-    if Ok0 == 0:
-        return 4 / 3 * np.pi * cosmo.comovingDistance(z, transverse=False) ** 3
-
-    dh = (const.c / (cosmo.H0 * u.km / (u.s * u.Mpc))).to('Mpc').value
-    dm = cosmo.comovingDistance(z, tranverse=True).value
-    term1 = 4. * np.pi * dh ** 3 / (2. * Ok0) * u.Mpc ** 3
-    term2 = dm / dh * np.sqrt(1 + Ok0 * (dm / dh) ** 2)
-    term3 = np.sqrt(abs(Ok0)) * dm / dh
-
-    if Ok0 > 0:
-        return term1 * (term2 - 1. / np.sqrt(abs(Ok0)) * np.arcsinh(term3))
-    else:
-        return term1 * (term2 - 1. / np.sqrt(abs(Ok0)) * np.arcsin(term3))
-
-def sky_comoving_volume(cosmo :AstropyCosmology, z1, z0=0,
-                        area=41253*u.deg**2):
+def sky_comoving_volume(cosmo: AstropyCosmology, z1: float, z0: float =0,
+                        area : Quantity =41253*u.deg**2):
+# def sky_comoving_volume(cosmo: AstropyCosmology, area : Quantity, z1: float,
+#                         z0: float =0):
     """
     Helper function to calculate the volume of a redshift bin over a
     specified area. Based on https://rdrr.io/cran/celestial/src/R/cosvol.R
@@ -90,12 +72,13 @@ def sky_comoving_volume(cosmo :AstropyCosmology, z1, z0=0,
         Survey area.
 
     """
+    if z1 < z0:
+        z0, z1 = z1, z0
     _ = np.pi * area.to(u.deg**2) / np.square(360 * u.deg)
-    if isinstance(cosmo, AstropyCosmology):
-         v = (cosmo.comoving_volume(z1) - cosmo.comoving_volume(z0))
-    elif isinstance(cosmo, ColossusCosmology):
-        v = (comoving_volume(cosmo, z1) - comoving_volume(cosmo, z0))
-    return _ * v
+    if isinstance(cosmo, ColossusCosmology) and cosmo.flat:
+        cosmo = HybridFlatLambdaCDM(cosmo)
+    assert isinstance(cosmo, AstropyCosmology), 'AstropyCosmology obj required.'
+    return _ * (cosmo.comoving_volume(z1) - cosmo.comoving_volume(z0))
 
 
 def wcs_pixel_info(sky):
