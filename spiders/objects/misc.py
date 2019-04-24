@@ -4,6 +4,10 @@ import pandas as pd
 from dataclasses import dataclass
 from astropy.coordinates import SkyCoord
 import subprocess as sp
+
+from astropy.cosmology import FlatLambdaCDM
+from colossus.cosmology.cosmology import Cosmology as ColossusCosmology
+
 from ..utils.misc import file_size
 
 
@@ -150,3 +154,14 @@ class CandidateWithPhoto(CandidateWithData):
             value is expected to be 'igrz'.
     """
     bands: str
+
+
+class HybridFlatLambdaCDM(FlatLambdaCDM):
+
+    def __init__(self, cosmo: ColossusCosmology, *args, **kw):
+        if not cosmo.flat:
+            raise ValueError('Colossus cosmology must be flat.')
+        pars = {k: getattr(cosmo, k) for k in ['H0', 'Om0', 'Ob0', 'name']}
+        kw.update(pars)
+        super().__init__(*args, **kw)
+        self.cosmo = cosmo
