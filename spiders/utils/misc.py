@@ -1,13 +1,7 @@
 import os
-
-import click
 import emcee
 import pandas as pd
 import numpy as np
-import tqdm
-import multiprocess as mp
-from dask_jobqueue import SLURMCluster
-from dask.distributed import Client
 from scipy.stats import norm
 
 
@@ -16,11 +10,7 @@ def file_size(path, unit='B'):
         size = os.path.getsize(path)
     else:
         size = 0
-    n = {
-        'B': 0,
-        'KB': 1,
-        'MB': 2}
-    return size / pow(1024, n[unit])
+    return size / pow(1024, dict(B=0, KB=1, MB=2)[unit])
 
 
 def assert_arraylike(x):
@@ -97,60 +87,3 @@ def foo():
     df.groupby('bin').agg(
         np.sum(lambda _: pj(_['bin'], _['obs'], _['obs_err'])))
 
-
-def parallelize(func, inputs, n_proc, loglevel=None):
-    """
-    Helper function to parrallelise any mappable function either
-    synchously or asynchrously using python's multiprocessing module.
-
-    Parameters
-    ----------
-        func :  Any mappable function.
-        inputs :  The arguments to multiproces.
-        n_proc :  The maximum number of python processes (engines) that
-        can be running at any one time.
-        sync (bool): Set to true if synchonous processing is required.
-        async (bool): Set to true if asynchonous processing is required.
-
-    Returns
-    ----------
-        None
-
-    """
-    if loglevel is not None:
-        logger = mp.log_to_stderr()
-        logger.setLevel(loglevel)
-
-    # TODO: could improve by only having one sync/ a sync arg
-    with mp.Pool(processes=n_proc) as p:
-        # Run multiprocessing with progress bar.
-        # TODO: other bands can have (quicker) async map as order no longer
-        # matters.
-        r = list(tqdm.tqdm(p.imap(func, inputs), total=len(inputs)))
-        # inform the processor that no new tasks will be added the pool
-        p.close()
-        # wait for map to be completed before proceeding
-        p.join()
-
-
-@click.group()
-@click.option('--nodes', '-N', type=int, default=8)
-@click.option('--cores', '-n', type=int, default=28)
-@click.option('--time', '-t', type=str, default='00:30:00')
-@click.option('--partition', '-p', default='express')
-@click.pass_context
-def dask_hpc(ctx: click.Context, nodes: int, cores: int, time: str,
-             partition: str):
-    """
-    See dask and srun/sbatch documentation for details.
-    
-    Parameters
-    ----------
-    ctx : click Context
-
-    """
-    # TODO: add memory stuff
-    cluster = SLURMCluster(cores=cores, memory="120GB", queue=partition,
-                           walltime=time, interface='ib0')
-    cluster.scale(nodes)
-    ctx.obj = Client(cluster)
