@@ -1,8 +1,8 @@
 import os
+from typing import Iterable
 import emcee
 import pandas as pd
 import numpy as np
-from scipy.stats import norm
 
 
 def file_size(path, unit='B'):
@@ -28,7 +28,28 @@ def assert_arraylike(x):
     return x
 
 
-def emcee_pandas(sampler: emcee.EnsembleSampler, nburn: int = None,
+def mesh_pandas(data: Iterable[np.array], **kw):
+    """
+
+    Parameters
+    ----------
+    data : Iterable[np.array]
+        Data to create meshgrid from.
+    kw : dict
+        Keyword arguments for pd.DataFrame constructor.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Meshgrid of of `data` in a convenient tabular format.
+
+    """
+    data = np.array(np.meshgrid(*data)).reshape(len(data), -1).T
+    df = pd.DataFrame(data=data, **kw)
+    return df
+
+
+def emcee_pandas(sampler: emcee.EnsembleSampler, nburn: int = 0,
                  pars: list = None):
     """
     Convert emcee chain to pd.DataFrame
@@ -43,20 +64,20 @@ def emcee_pandas(sampler: emcee.EnsembleSampler, nburn: int = None,
 
     Returns
     -------
-    pd.DataFrame
+    df : pd.DataFrame
+        Burnt in chain
 
     """
+
+    chain = sampler.get_chain(discard=nburn, flat=False)
     # Convert chain to a pd.DataFrame for easy plotting with sns.
-    df = pd.Panel(sampler.chain).to_frame().stack().reset_index()
-    #TODO: Panel will be deprected soon so need to a replacement with x-array?
+    df = pd.Panel(chain).to_frame().stack().reset_index()
+    # TODO: Panel will be deprected soon so need to a replacement with x-array?
     df.columns = ['step', 'par', 'walker', 'value']
 
     # Sort before potential mapping.
     df = df.sort_values(['par', 'step', 'walker'])
 
-    if nburn:
-        # Burn the chain.
-        df = df.query(f'step > {nburn}')
     if pars:
         # Map par values with keys.
         df['par'] = df['par'].map(lambda _: pars[_])
@@ -66,24 +87,20 @@ def emcee_pandas(sampler: emcee.EnsembleSampler, nburn: int = None,
     return df
 
 
-def pj(bin_edges: tuple, loc: float = 0, scale: float = 1):
-    if isinstance(bin_edges, pd.Interval):
-        # TODO: account for if bin edges is series of pd.interval
-        right, left = bin_edges.left, bin_edges.right
-    else:
-        right, left = bin_edges
+def evalrecurse_dict(dictionary: dict, evaluate: Iterable[str]):
+    """
+    Evaluate python expressions from strings in a dictionary.
 
-    kw = dict(loc=loc, scale=scale)
-    p = norm.cdf(right, **kw) - norm.cdf(left, **kw)
-    return p
-
-
-def bin_uncertainity(bin_edges, observation, uncertainty):
-    _pj = pj(bin_edges=bin_edges, loc=observation, scale=uncertainty)
-    return np.sum(_pj * (1 - _pj))
-
-
-def foo():
-    df.groupby('bin').agg(
-        np.sum(lambda _: pj(_['bin'], _['obs'], _['obs_err'])))
-
+    Parameters
+    ----------
+    dictionary : dict
+    evaluate : str or Iterable[str]
+        key or iterable of keys of the dictionary to evaluate.
+    """
+    if not isinstance(evaluate, (tuple, list, np.array)):
+        evaluate = list(evaluate)
+    for k, v in dictionary.items():
+        if isinstance(v, dict):
+            evalrecurse_dict(v, evaluate=evaluate)
+        elif k in evaluate and isinstance(v, str):
+            dictionary[k] = eval(v)
