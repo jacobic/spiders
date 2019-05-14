@@ -46,7 +46,7 @@ setup(author="Jacob Ider Chitham", author_email='jacobic@mpe.mpg.de',
     install_requires=requirements, license="MIT license",
     long_description=readme + '\n\n' + history, include_package_data=True,
     keywords='spiders', name='spiders',
-    packages=find_packages(include=['spiders']),
+    packages=find_packages(include=['spiders', 'spiders.*']),
     setup_requires=setup_requirements, test_suite='tests',
     tests_require=test_requirements, url='https://github.com/jacobic/spiders',
     version='0.1.0', zip_safe=False, )
