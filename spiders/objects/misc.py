@@ -4,6 +4,7 @@ import pandas as pd
 from dataclasses import dataclass
 from astropy.coordinates import SkyCoord
 import subprocess as sp
+from pymangle import Mangle
 
 from astropy.cosmology import FlatLambdaCDM
 from colossus.cosmology.cosmology import Cosmology as ColossusCosmology
@@ -165,3 +166,8 @@ class HybridFlatLambdaCDM(FlatLambdaCDM):
         kw.update(pars)
         super().__init__(*args, **kw)
         self.cosmo = cosmo
+
+
+class PickleMangle(Mangle):
+    def __reduce__(self):
+        return (self.__class__, (), self.filename)
