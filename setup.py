@@ -13,7 +13,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = ['Click>=6.0', 'colossus', 'astropy', 'pandas', 'scikit-learn',
                 'numpy', 'scipy', 'dill', 'emcee', 'tqdm', 'multiprocess',
-                'dask', 'pyspark'
+                'dask', 'pyspark', 'pymangle'
                 ]
 
 dependency_links = [
