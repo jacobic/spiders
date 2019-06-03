@@ -255,7 +255,7 @@ def regions2compound(region_list):
 
     Example
     -------
-    Lists of regions are useful for area calculations but compund regions are
+    Lists of regions are useful for area calculations but compound regions are
     way more useful for checking which sources lie within the regions.
     """
 
@@ -265,4 +265,4 @@ def regions2compound(region_list):
         else:
             compound_region = compound_region | r
 
-        return compound_region
+    return compound_region
